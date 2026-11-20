@@ -1,0 +1,84 @@
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import { Role } from '@/shared';
+import { Roles } from '../common/decorators/roles.decorator';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
+import type { AuthUser } from '../common/decorators/current-user.decorator';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { SendDocumentEmailDto } from '../mail/dto/send-document-email.dto';
+import { BillingService } from './billing.service';
+import { BulkEmailInvoicesDto } from './dto/bulk-email-invoices.dto';
+import { CreateInvoiceDto } from './dto/create-invoice.dto';
+import { GenerateInvoicesDto } from './dto/generate-invoices.dto';
+import { InvoiceQueryDto } from './dto/invoice-query.dto';
+
+@Controller('billing')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(Role.ADMIN, Role.BRANCH_MANAGER)
+export class BillingController {
+  constructor(private readonly billingService: BillingService) {}
+
+  @Post('invoices/generate')
+  generate(@Body() dto: GenerateInvoicesDto, @CurrentUser() user: AuthUser) {
+    return this.billingService.generate(dto, user);
+  }
+
+  @Post('invoices')
+  create(@Body() dto: CreateInvoiceDto, @CurrentUser() user: AuthUser) {
+    return this.billingService.create(dto, user);
+  }
+
+  @Post('invoices/email-bulk')
+  sendEmailBulk(
+    @Body() dto: BulkEmailInvoicesDto,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.billingService.sendEmailBulk(dto, user);
+  }
+
+  @Get('invoices')
+  findAll(@Query() query: InvoiceQueryDto, @CurrentUser() user: AuthUser) {
+    return this.billingService.findAll(query, user);
+  }
+
+  @Get('invoices/:id/document')
+  document(@Param('id') id: string, @CurrentUser() user: AuthUser) {
+    return this.billingService.findDocument(id, user);
+  }
+
+  @Get('invoices/:id')
+  findOne(@Param('id') id: string, @CurrentUser() user: AuthUser) {
+    return this.billingService.findOne(id, user);
+  }
+
+  @Post('invoices/:id/email')
+  sendEmail(
+    @Param('id') id: string,
+    @Body() dto: SendDocumentEmailDto,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.billingService.sendEmail(id, dto, user);
+  }
+
+  @Delete('invoices/:id')
+  remove(@Param('id') id: string, @CurrentUser() user: AuthUser) {
+    return this.billingService.remove(id, user);
+  }
+
+  @Get('customers/:customerId/statement')
+  statement(
+    @Param('customerId') customerId: string,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.billingService.customerStatement(customerId, user);
+  }
+}

@@ -1,0 +1,80 @@
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import { Role } from '@/shared';
+import { Roles } from '../common/decorators/roles.decorator';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
+import type { AuthUser } from '../common/decorators/current-user.decorator';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { ConsignmentsService } from './consignments.service';
+import {
+  ConsignmentQueryDto,
+  CreateConsignmentDto,
+  UpdateConsignmentDto,
+} from './dto/consignment.dto';
+
+@Controller('consignments')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(Role.ADMIN, Role.BRANCH_MANAGER)
+export class ConsignmentsController {
+  constructor(private readonly consignmentsService: ConsignmentsService) {}
+
+  @Get('dashboard/counts')
+  dashboard() {
+    return this.consignmentsService.dashboardCounts();
+  }
+
+  @Post()
+  create(@Body() dto: CreateConsignmentDto, @CurrentUser() user: AuthUser) {
+    return this.consignmentsService.create(dto, user);
+  }
+
+  @Get()
+  findAll(
+    @Query() query: ConsignmentQueryDto,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.consignmentsService.findAll(query, user);
+  }
+
+  @Get('awb/:awb')
+  findByAwb(@Param('awb') awb: string) {
+    return this.consignmentsService.findByAwb(awb);
+  }
+
+  @Get(':id/document')
+  findDocument(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.consignmentsService.findDocument(id, user);
+  }
+
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.consignmentsService.findOne(id);
+  }
+
+  @Patch(':id')
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateConsignmentDto,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.consignmentsService.update(id, dto, user);
+  }
+
+  @Delete(':id')
+  remove(@Param('id') id: string, @CurrentUser() user: AuthUser) {
+    return this.consignmentsService.remove(id, user);
+  }
+}

@@ -1,0 +1,365 @@
+import { BookingType } from '@/shared';
+import { Transform } from 'class-transformer';
+import {
+  IsBoolean,
+  IsDateString,
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Min,
+  MinLength,
+  ValidateIf,
+  IsNumberString,
+} from 'class-validator';
+import { PaginationDto } from '../../common/dto/pagination.dto';
+
+export class CreateConsignmentDto {
+  @IsOptional()
+  @IsEnum(BookingType)
+  bookingType?: BookingType;
+
+  @ValidateIf((o: CreateConsignmentDto) => o.bookingType === BookingType.ACCOUNT)
+  @IsNumberString()
+  customerId?: string;
+
+  @IsOptional()
+  @IsNumberString()
+  courierCompanyId?: string;
+
+  @IsOptional()
+  @IsNumberString()
+  quotationId?: string;
+
+  @IsOptional()
+  @IsNumberString()
+  senderLocationId?: string;
+
+  @IsOptional()
+  @IsNumberString()
+  receiverId?: string;
+
+  @IsOptional()
+  @IsString()
+  rateSectionId?: string;
+
+  @IsOptional()
+  @IsString()
+  rateColumnId?: string;
+
+  @IsOptional()
+  @IsDateString()
+  bookingDate?: string;
+
+  /** Document number — stored as AWB (unique) */
+  @IsString()
+  @MinLength(1)
+  awb: string;
+
+  /** Cash walk-in party (not a Customer record) */
+  @ValidateIf((o: CreateConsignmentDto) => o.bookingType === BookingType.CASH)
+  @IsString()
+  @MinLength(2)
+  partyName?: string;
+
+  @IsOptional()
+  @IsString()
+  partyPhone?: string;
+
+  @IsOptional()
+  @IsString()
+  partyAddress?: string;
+
+  @IsOptional()
+  @IsString()
+  partyCity?: string;
+
+  @IsOptional()
+  @IsString()
+  partyState?: string;
+
+  @IsOptional()
+  @IsString()
+  partyPincode?: string;
+
+  @IsOptional()
+  @IsString()
+  partyGstin?: string;
+
+  @IsOptional()
+  @IsString()
+  partyEmail?: string;
+
+  @IsString()
+  @MinLength(2)
+  senderName: string;
+
+  @IsOptional()
+  @IsString()
+  senderPhone?: string;
+
+  @IsOptional()
+  @IsString()
+  senderAddress?: string;
+
+  @IsString()
+  @MinLength(2)
+  receiverName: string;
+
+  @IsOptional()
+  @IsString()
+  receiverPhone?: string;
+
+  @IsOptional()
+  @IsString()
+  receiverAddress?: string;
+
+  @IsOptional()
+  @IsString()
+  receiverCity?: string;
+
+  @IsOptional()
+  @IsString()
+  receiverState?: string;
+
+  @IsOptional()
+  @IsString()
+  receiverPincode?: string;
+
+  @IsOptional()
+  @IsNumberString()
+  receiverCityId?: string;
+
+  @IsOptional()
+  @IsNumberString()
+  receiverStateId?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  weightKg?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  cgst?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  sgst?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  igst?: number;
+
+  @IsOptional()
+  @IsString()
+  remarks?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  price?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  basePrice?: number;
+}
+
+export class UpdateConsignmentDto {
+  @IsOptional()
+  @IsEnum(BookingType)
+  bookingType?: BookingType;
+
+  @IsOptional()
+  @IsDateString()
+  bookingDate?: string;
+
+  /** Document number — stored as AWB (unique) */
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  awb?: string;
+
+  @IsOptional()
+  @IsNumberString()
+  customerId?: string;
+
+  @IsOptional()
+  @IsNumberString()
+  courierCompanyId?: string | null;
+
+  @IsOptional()
+  @IsNumberString()
+  quotationId?: string | null;
+
+  @IsOptional()
+  @IsNumberString()
+  senderLocationId?: string | null;
+
+  @IsOptional()
+  @IsNumberString()
+  receiverId?: string | null;
+
+  @IsOptional()
+  @IsString()
+  rateSectionId?: string | null;
+
+  @IsOptional()
+  @IsString()
+  rateColumnId?: string | null;
+
+  @IsOptional()
+  @IsString()
+  partyName?: string | null;
+
+  @IsOptional()
+  @IsString()
+  partyPhone?: string | null;
+
+  @IsOptional()
+  @IsString()
+  partyAddress?: string | null;
+
+  @IsOptional()
+  @IsString()
+  partyCity?: string | null;
+
+  @IsOptional()
+  @IsString()
+  partyState?: string | null;
+
+  @IsOptional()
+  @IsString()
+  partyPincode?: string | null;
+
+  @IsOptional()
+  @IsString()
+  partyGstin?: string | null;
+
+  @IsOptional()
+  @IsString()
+  partyEmail?: string | null;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(2)
+  senderName?: string;
+
+  @IsOptional()
+  @IsString()
+  senderPhone?: string | null;
+
+  @IsOptional()
+  @IsString()
+  senderAddress?: string | null;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(2)
+  receiverName?: string;
+
+  @IsOptional()
+  @IsString()
+  receiverPhone?: string | null;
+
+  @IsOptional()
+  @IsString()
+  receiverAddress?: string | null;
+
+  @IsOptional()
+  @IsString()
+  receiverCity?: string | null;
+
+  @IsOptional()
+  @IsString()
+  receiverState?: string | null;
+
+  @IsOptional()
+  @IsString()
+  receiverPincode?: string | null;
+
+  @IsOptional()
+  @IsNumberString()
+  receiverCityId?: string | null;
+
+  @IsOptional()
+  @IsNumberString()
+  receiverStateId?: string | null;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  weightKg?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  cgst?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  sgst?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  igst?: number;
+
+  @IsOptional()
+  @IsString()
+  remarks?: string | null;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  price?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  basePrice?: number;
+}
+
+export class ConsignmentQueryDto extends PaginationDto {
+  @IsOptional()
+  @IsString()
+  search?: string;
+
+  @IsOptional()
+  @IsEnum(BookingType)
+  bookingType?: BookingType;
+
+  @IsOptional()
+  @IsNumberString()
+  receiverId?: string;
+
+  @IsOptional()
+  @IsNumberString()
+  customerId?: string;
+
+  /** Exact/partial party name filter for cash bookings */
+  @IsOptional()
+  @IsString()
+  partyName?: string;
+
+  /** Inclusive booking date range start (YYYY-MM-DD) */
+  @IsOptional()
+  @IsString()
+  dateFrom?: string;
+
+  /** Inclusive booking date range end (YYYY-MM-DD) */
+  @IsOptional()
+  @IsString()
+  dateTo?: string;
+
+  /** When true, only consignments created by the current user */
+  @IsOptional()
+  @Transform(({ value }) => value === true || value === 'true' || value === '1')
+  @IsBoolean()
+  mine?: boolean;
+}
