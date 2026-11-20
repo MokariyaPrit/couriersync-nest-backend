@@ -14,6 +14,7 @@
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "seed": "ts-node -r tsconfig-paths/register -r dotenv/config -P tsconfig.typeorm.json src/seed.ts",
+    "seed:demo": "ts-node -r tsconfig-paths/register -r dotenv/config -P tsconfig.typeorm.json src/seed-demo.ts",
     "db:reset": "ts-node -r dotenv/config -P tsconfig.typeorm.json src/reset-db.ts",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",

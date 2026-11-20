@@ -19,8 +19,8 @@ couriersync-nest-backend/
 npm install
 cp .env.example .env
 npm run db:up
-npm run migration:run
 npm run seed
+npm run seed:demo
 npm run dev
 ```
 
