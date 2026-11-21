@@ -10,6 +10,7 @@ import { AuthUser } from '../common/decorators/current-user.decorator';
 import { Consignment } from '../entities/consignment.entity';
 import { AnjaniTrackingProvider } from './providers/anjani.provider';
 import { MahavirTrackingProvider } from './providers/mahavir.provider';
+import { MarutiTrackingProvider } from './providers/maruti.provider';
 import { NandanTrackingProvider } from './providers/nandan.provider';
 import { TirupatiTrackingProvider } from './providers/tirupati.provider';
 import type {
@@ -28,12 +29,14 @@ export class TrackingService {
     anjani: AnjaniTrackingProvider,
     mahavir: MahavirTrackingProvider,
     nandan: NandanTrackingProvider,
+    maruti: MarutiTrackingProvider,
   ) {
     this.adapters = new Map<string, TrackingProviderAdapter>([
       [TrackingProvider.TIRUPATI, tirupati],
       [TrackingProvider.ANJANI, anjani],
       [TrackingProvider.MAHAVIR, mahavir],
       [TrackingProvider.NANDAN, nandan],
+      [TrackingProvider.MARUTI, maruti],
     ]);
   }
 

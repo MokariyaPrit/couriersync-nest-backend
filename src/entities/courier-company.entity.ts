@@ -24,7 +24,7 @@ export class CourierCompany {
 
   /**
    * In-app live tracking adapter (null = no Track action).
-   * Values: TrackingProvider enum e.g. TIRUPATI, ANJANI, MAHAVIR, NANDAN
+   * Values: TrackingProvider enum e.g. TIRUPATI, ANJANI, MAHAVIR, NANDAN, MARUTI
    */
   @Column({ type: 'varchar', length: 32, nullable: true })
   trackingProvider: string | null;
