@@ -8,6 +8,7 @@ import { Role, TrackingProvider } from '@/shared';
 import { Repository } from 'typeorm';
 import { AuthUser } from '../common/decorators/current-user.decorator';
 import { Consignment } from '../entities/consignment.entity';
+import { AnjaniTrackingProvider } from './providers/anjani.provider';
 import { TirupatiTrackingProvider } from './providers/tirupati.provider';
 import type {
   TrackingProviderAdapter,
@@ -22,8 +23,12 @@ export class TrackingService {
     @InjectRepository(Consignment)
     private readonly consignmentsRepo: Repository<Consignment>,
     tirupati: TirupatiTrackingProvider,
+    anjani: AnjaniTrackingProvider,
   ) {
-    this.adapters = new Map([[TrackingProvider.TIRUPATI, tirupati]]);
+    this.adapters = new Map<string, TrackingProviderAdapter>([
+      [TrackingProvider.TIRUPATI, tirupati],
+      [TrackingProvider.ANJANI, anjani],
+    ]);
   }
 
   async trackConsignment(
