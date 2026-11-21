@@ -10,17 +10,39 @@ export class BookingTabConfigDto {
   @IsArray()
   @IsString({ each: true })
   cash?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  cargoAccount?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  cargoCash?: string[];
+}
+
+export type BookingTabConfigShape = {
+  account: string[];
+  cash: string[];
+  cargoAccount: string[];
+  cargoCash: string[];
+};
+
+function cleanKeys(raw?: string[]): string[] {
+  return Array.isArray(raw)
+    ? raw.filter((k) => typeof k === 'string' && k.trim())
+    : [];
 }
 
 export function normalizeBookingTabConfigDto(
   raw?: BookingTabConfigDto | null,
-): { account: string[]; cash: string[] } | null {
+): BookingTabConfigShape | null {
   if (!raw) return null;
-  const account = Array.isArray(raw.account)
-    ? raw.account.filter((k) => typeof k === 'string' && k.trim())
-    : [];
-  const cash = Array.isArray(raw.cash)
-    ? raw.cash.filter((k) => typeof k === 'string' && k.trim())
-    : [];
-  return { account, cash };
+  return {
+    account: cleanKeys(raw.account),
+    cash: cleanKeys(raw.cash),
+    cargoAccount: cleanKeys(raw.cargoAccount),
+    cargoCash: cleanKeys(raw.cargoCash),
+  };
 }

@@ -33,10 +33,15 @@ export class UserConfig {
 
   /**
    * Per-user booking Tab order: which fields receive focus.
-   * Shape: { account: string[], cash: string[] }
+   * Shape: { account, cash, cargoAccount, cargoCash }
    */
   @Column({ type: 'jsonb', nullable: true })
-  bookingTabConfig: { account: string[]; cash: string[] } | null;
+  bookingTabConfig: {
+    account: string[];
+    cash: string[];
+    cargoAccount: string[];
+    cargoCash: string[];
+  } | null;
 
   /**
    * Quotation / contract Terms & Conditions lines.
