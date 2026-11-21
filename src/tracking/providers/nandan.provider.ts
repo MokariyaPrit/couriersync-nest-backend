@@ -53,8 +53,18 @@ type NandanTravel = {
   remarks?: string | null;
   from_center?: string | null;
   to_center?: string | null;
-  /** Some payloads use a free-text event line */
   description?: string | null;
+  /** Domestic scan payload fields */
+  org_name?: string | null;
+  next_name?: string | null;
+  ti_name?: string | null;
+  ta_name?: string | null;
+  from_address?: string | null;
+  to_address?: string | null;
+  result?: string | null;
+  result1?: string | null;
+  result2?: string | null;
+  result3?: string | null;
 };
 
 type NandanDelivery = {
@@ -217,21 +227,29 @@ export class NandanTrackingProvider implements TrackingProviderAdapter {
       }
 
       const events: TrackingEvent[] = (view.traveling_info ?? []).map((row) => {
+        const center =
+          row.org_name ||
+          row.center_name ||
+          row.center ||
+          null;
+        const next = row.next_name || row.to_center || null;
         const job =
+          row.result1?.trim() ||
+          row.result?.replace(/\s+/g, ' ').trim() ||
           row.status_name ||
           row.status ||
           row.event ||
-          row.description ||
+          [row.ti_name, row.ta_name].filter(Boolean).join(' ') ||
           null;
         return {
           job,
           date: row.date || row.created || null,
           route:
             [
-              row.center_name || row.center,
-              row.from_center && row.to_center
-                ? `${row.from_center} → ${row.to_center}`
-                : row.remarks,
+              center && next ? `${center} → ${next}` : center || next,
+              row.result2?.trim() || null,
+              row.from_address?.trim() || row.to_address?.trim() || null,
+              row.remarks?.trim() || null,
             ]
               .filter(Boolean)
               .join(' · ') || null,
