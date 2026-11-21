@@ -9,6 +9,7 @@ import { Repository } from 'typeorm';
 import { AuthUser } from '../common/decorators/current-user.decorator';
 import { Consignment } from '../entities/consignment.entity';
 import { AnjaniTrackingProvider } from './providers/anjani.provider';
+import { BlueDartTrackingProvider } from './providers/bluedart.provider';
 import { MahavirTrackingProvider } from './providers/mahavir.provider';
 import { MarutiTrackingProvider } from './providers/maruti.provider';
 import { NandanTrackingProvider } from './providers/nandan.provider';
@@ -30,6 +31,7 @@ export class TrackingService {
     mahavir: MahavirTrackingProvider,
     nandan: NandanTrackingProvider,
     maruti: MarutiTrackingProvider,
+    bluedart: BlueDartTrackingProvider,
   ) {
     this.adapters = new Map<string, TrackingProviderAdapter>([
       [TrackingProvider.TIRUPATI, tirupati],
@@ -37,6 +39,7 @@ export class TrackingService {
       [TrackingProvider.MAHAVIR, mahavir],
       [TrackingProvider.NANDAN, nandan],
       [TrackingProvider.MARUTI, maruti],
+      [TrackingProvider.BLUEDART, bluedart],
     ]);
   }
 

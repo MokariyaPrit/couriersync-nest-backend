@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Consignment } from '../entities/consignment.entity';
 import { AnjaniTrackingProvider } from './providers/anjani.provider';
+import { BlueDartTrackingProvider } from './providers/bluedart.provider';
 import { MahavirTrackingProvider } from './providers/mahavir.provider';
 import { MarutiTrackingProvider } from './providers/maruti.provider';
 import { NandanTrackingProvider } from './providers/nandan.provider';
@@ -16,6 +17,7 @@ import { TrackingService } from './tracking.service';
     MahavirTrackingProvider,
     NandanTrackingProvider,
     MarutiTrackingProvider,
+    BlueDartTrackingProvider,
     TrackingService,
   ],
   exports: [TrackingService],
