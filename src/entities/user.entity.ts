@@ -8,6 +8,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { UserConfig } from './user-config.entity';
 import { UserInfo } from './user-info.entity';
 
 @Entity('users')
@@ -29,6 +30,9 @@ export class User {
 
   @OneToOne(() => UserInfo, (info) => info.user)
   userInfo: UserInfo | null;
+
+  @OneToOne(() => UserConfig, (cfg) => cfg.user)
+  userConfig: UserConfig | null;
 
   @CreateDateColumn()
   createdAt: Date;

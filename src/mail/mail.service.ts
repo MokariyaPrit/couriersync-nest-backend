@@ -48,7 +48,7 @@ export class MailService {
   async loadIssuer(userId: string) {
     const user = await this.usersRepo.findOne({
       where: { id: userId },
-      relations: { userInfo: true },
+      relations: { userInfo: true, userConfig: true },
     });
     if (!user) {
       throw new NotFoundException('Document issuer not found');
@@ -57,14 +57,14 @@ export class MailService {
   }
 
   assertSmtpConfigured(user: User) {
-    const info = user.userInfo;
+    const cfg = user.userConfig;
     if (
-      !info?.smtpHost?.trim() ||
-      !info.smtpUser?.trim() ||
-      !info.smtpPasswordEnc?.trim()
+      !cfg?.smtpHost?.trim() ||
+      !cfg.smtpUser?.trim() ||
+      !cfg.smtpPasswordEnc?.trim()
     ) {
       throw new BadRequestException(
-        'Gmail is not configured. Open Profile → Gmail and add the Google email + App Password for the document owner.',
+        'Gmail is not configured. Open Settings → Gmail and add the Google email + App Password for the document owner.',
       );
     }
   }
@@ -74,40 +74,39 @@ export class MailService {
     from: string;
   } {
     this.assertSmtpConfigured(user);
-    const info = user.userInfo!;
+    const cfg = user.userConfig!;
+    const info = user.userInfo;
     let password: string;
     try {
-      password = decryptSmtpPassword(info.smtpPasswordEnc!, this.smtpSecret());
+      password = decryptSmtpPassword(cfg.smtpPasswordEnc!, this.smtpSecret());
     } catch {
       throw new BadRequestException(
-        'Stored SMTP password could not be decrypted. Re-save Gmail settings on Profile.',
+        'Stored SMTP password could not be decrypted. Re-save Gmail settings.',
       );
     }
-    // Gmail app passwords are often stored/pasted with spaces
     password = password.replace(/\s+/g, '');
 
-    // Always prefer Gmail defaults when host is missing or still Google
-    const host = (info.smtpHost || 'smtp.gmail.com').trim() || 'smtp.gmail.com';
+    const host = (cfg.smtpHost || 'smtp.gmail.com').trim() || 'smtp.gmail.com';
     const isGmail = /gmail\.com$/i.test(host);
-    const port = info.smtpPort || (isGmail ? 587 : 587);
-    const secure = isGmail ? false : Boolean(info.smtpSecure);
+    const port = cfg.smtpPort || (isGmail ? 587 : 587);
+    const secure = isGmail ? false : Boolean(cfg.smtpSecure);
     const transporter = nodemailer.createTransport({
       host,
       port,
       secure,
       auth: {
-        user: info.smtpUser!.trim(),
+        user: cfg.smtpUser!.trim(),
         pass: password,
       },
     });
 
     const fromEmail =
-      info.smtpFromEmail?.trim() ||
-      info.smtpUser!.trim() ||
-      info.email ||
+      cfg.smtpFromEmail?.trim() ||
+      cfg.smtpUser!.trim() ||
+      info?.email ||
       user.email;
     const fromName =
-      info.companyName?.trim() || info.fullName?.trim() || 'Courier';
+      info?.companyName?.trim() || info?.fullName?.trim() || 'Courier';
     const from = `"${fromName.replace(/"/g, '')}" <${fromEmail}>`;
 
     return { transporter, from };

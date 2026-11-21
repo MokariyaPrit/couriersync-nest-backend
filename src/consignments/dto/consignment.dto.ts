@@ -1,9 +1,10 @@
-import { BookingType } from '@/shared';
+import { BookingType, ShipmentKind } from '@/shared';
 import { Transform } from 'class-transformer';
 import {
   IsBoolean,
   IsDateString,
   IsEnum,
+  IsInt,
   IsNumber,
   IsOptional,
   IsString,
@@ -18,6 +19,10 @@ export class CreateConsignmentDto {
   @IsOptional()
   @IsEnum(BookingType)
   bookingType?: BookingType;
+
+  @IsOptional()
+  @IsEnum(ShipmentKind)
+  shipmentKind?: ShipmentKind;
 
   @ValidateIf((o: CreateConsignmentDto) => o.bookingType === BookingType.ACCOUNT)
   @IsNumberString()
@@ -167,12 +172,98 @@ export class CreateConsignmentDto {
   @IsNumber()
   @Min(0)
   basePrice?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  numberOfBoxes?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  grossAmt?: number;
+
+  @IsOptional()
+  @IsString()
+  otherChargeLabel?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  otherChargeAmt?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  fuelChargePercent?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  fuelChargeAmt?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  insuranceEnabled?: boolean;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  insurancePercent?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  insuranceAmt?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  ewayBillEnabled?: boolean;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  ewayBillPercent?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  ewayBillAmt?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  parcelValue?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  heightCm?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  lengthCm?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  widthCm?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  volumetricDivisor?: number;
 }
 
 export class UpdateConsignmentDto {
   @IsOptional()
   @IsEnum(BookingType)
   bookingType?: BookingType;
+
+  @IsOptional()
+  @IsEnum(ShipmentKind)
+  shipmentKind?: ShipmentKind;
 
   @IsOptional()
   @IsDateString()
@@ -323,6 +414,88 @@ export class UpdateConsignmentDto {
   @IsNumber()
   @Min(0)
   basePrice?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  numberOfBoxes?: number | null;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  grossAmt?: number | null;
+
+  @IsOptional()
+  @IsString()
+  otherChargeLabel?: string | null;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  otherChargeAmt?: number | null;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  fuelChargePercent?: number | null;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  fuelChargeAmt?: number | null;
+
+  @IsOptional()
+  @IsBoolean()
+  insuranceEnabled?: boolean;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  insurancePercent?: number | null;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  insuranceAmt?: number | null;
+
+  @IsOptional()
+  @IsBoolean()
+  ewayBillEnabled?: boolean;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  ewayBillPercent?: number | null;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  ewayBillAmt?: number | null;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  parcelValue?: number | null;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  heightCm?: number | null;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  lengthCm?: number | null;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  widthCm?: number | null;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  volumetricDivisor?: number | null;
 }
 
 export class ConsignmentQueryDto extends PaginationDto {
@@ -333,6 +506,10 @@ export class ConsignmentQueryDto extends PaginationDto {
   @IsOptional()
   @IsEnum(BookingType)
   bookingType?: BookingType;
+
+  @IsOptional()
+  @IsEnum(ShipmentKind)
+  shipmentKind?: ShipmentKind;
 
   @IsOptional()
   @IsNumberString()

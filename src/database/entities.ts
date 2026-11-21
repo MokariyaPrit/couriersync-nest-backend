@@ -16,6 +16,7 @@ import {
   State,
   User,
   UserCourierCompanyPref,
+  UserConfig,
   UserInfo,
   UserRateCity,
 } from '../entities';
@@ -24,6 +25,7 @@ import {
 export const ALL_ENTITIES = [
   User,
   UserInfo,
+  UserConfig,
   Customer,
   State,
   City,

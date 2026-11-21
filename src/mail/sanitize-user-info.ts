@@ -1,26 +1,19 @@
 import { UserInfo } from '../entities/user-info.entity';
 
-export type PublicUserInfo = Omit<UserInfo, 'smtpPasswordEnc' | 'logoKey'> & {
-  smtpConfigured: boolean;
+export type PublicUserInfo = Omit<UserInfo, 'logoKey'> & {
   /** Signed CDN/view URL resolved at read time (not stored). */
   logoUrl?: string | null;
-  smtpPasswordEnc?: never;
   logoKey?: never;
 };
 
-/** Strip secrets / storage keys; expose smtpConfigured for the client. */
+/** Strip storage keys; profile identity only (no SMTP / prefs). */
 export function sanitizeUserInfo(
   info: UserInfo | null | undefined,
 ): PublicUserInfo | null {
   if (!info) return null;
-  const { smtpPasswordEnc: _, logoKey: __, ...rest } = info;
+  const { logoKey: _, ...rest } = info;
   return {
     ...rest,
     logoUrl: null,
-    smtpConfigured: Boolean(
-      info.smtpHost?.trim() &&
-        info.smtpUser?.trim() &&
-        info.smtpPasswordEnc?.trim(),
-    ),
   };
 }

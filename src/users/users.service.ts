@@ -12,14 +12,16 @@ import {
   PaginationDto,
   resolveSortPair,
 } from '../common/dto/pagination.dto';
+import { normalizeTermsList } from '../common/utils/terms-and-conditions';
+import { UserConfig } from '../entities/user-config.entity';
 import { UserInfo } from '../entities/user-info.entity';
 import { User } from '../entities/user.entity';
+import { sanitizeUserConfig } from '../mail/sanitize-user-config';
+import { sanitizeUserInfo } from '../mail/sanitize-user-info';
 import {
   encryptSmtpPassword,
   resolveSmtpCryptoSecret,
 } from '../mail/smtp-crypto';
-import { sanitizeUserInfo } from '../mail/sanitize-user-info';
-import { normalizeTermsList } from '../common/utils/terms-and-conditions';
 import { normalizeBookingTabConfigDto } from './dto/booking-tab-config.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -33,12 +35,36 @@ const USER_SORT = [
   'expiredOn',
 ] as const;
 
+type SmtpPatch = {
+  smtpHost?: string | null;
+  smtpPort?: number | null;
+  smtpSecure?: boolean;
+  smtpUser?: string | null;
+  smtpPassword?: string | null;
+  smtpFromEmail?: string | null;
+};
+
+type ConfigPatch = {
+  sgstPercent?: number;
+  cgstPercent?: number;
+  igstPercent?: number;
+  bookingTabConfig?: UpdateUserDto['bookingTabConfig'];
+  termsAndConditions?: string[] | null;
+  insurancePercent?: number;
+  paymentDays?: number;
+  volumetricDivisor?: number;
+  ewayBillThreshold?: number;
+  cargoPrintTemplate?: string;
+} & SmtpPatch;
+
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User) private readonly usersRepo: Repository<User>,
     @InjectRepository(UserInfo)
     private readonly userInfoRepo: Repository<UserInfo>,
+    @InjectRepository(UserConfig)
+    private readonly userConfigRepo: Repository<UserConfig>,
     private readonly config: ConfigService,
   ) {}
 
@@ -47,6 +73,7 @@ export class UsersService {
     return {
       ...rest,
       userInfo: sanitizeUserInfo(user.userInfo),
+      userConfig: sanitizeUserConfig(user.userConfig),
     };
   }
 
@@ -57,64 +84,144 @@ export class UsersService {
     );
   }
 
-  private applySmtpSettings(info: UserInfo, dto: UpdateUserDto) {
+  private applySmtpSettings(cfg: UserConfig, dto: SmtpPatch) {
     const clearingHost =
       dto.smtpHost !== undefined &&
       (dto.smtpHost == null || String(dto.smtpHost).trim() === '');
 
     if (clearingHost) {
-      info.smtpHost = null;
-      info.smtpPort = 587;
-      info.smtpSecure = false;
-      info.smtpUser = null;
-      info.smtpPasswordEnc = null;
-      info.smtpFromEmail = null;
+      cfg.smtpHost = null;
+      cfg.smtpPort = 587;
+      cfg.smtpSecure = false;
+      cfg.smtpUser = null;
+      cfg.smtpPasswordEnc = null;
+      cfg.smtpFromEmail = null;
       return;
     }
 
     if (dto.smtpHost !== undefined) {
-      info.smtpHost = String(dto.smtpHost).trim() || null;
+      cfg.smtpHost = String(dto.smtpHost).trim() || null;
     }
     if (dto.smtpPort !== undefined) {
-      info.smtpPort = dto.smtpPort ?? 587;
+      cfg.smtpPort = dto.smtpPort ?? 587;
     }
     if (dto.smtpSecure !== undefined) {
-      info.smtpSecure = Boolean(dto.smtpSecure);
+      cfg.smtpSecure = Boolean(dto.smtpSecure);
     }
     if (dto.smtpUser !== undefined) {
-      info.smtpUser =
+      cfg.smtpUser =
         dto.smtpUser == null || String(dto.smtpUser).trim() === ''
           ? null
           : String(dto.smtpUser).trim();
     }
     if (dto.smtpFromEmail !== undefined) {
-      info.smtpFromEmail =
+      cfg.smtpFromEmail =
         dto.smtpFromEmail == null || String(dto.smtpFromEmail).trim() === ''
           ? null
           : String(dto.smtpFromEmail).trim().toLowerCase();
     }
-    // Blank / omitted password keeps existing encrypted value
     if (
       dto.smtpPassword !== undefined &&
       dto.smtpPassword != null &&
       String(dto.smtpPassword).trim() !== ''
     ) {
-      // Gmail app passwords often include spaces when pasted
       const password = String(dto.smtpPassword).replace(/\s+/g, '');
-      info.smtpPasswordEnc = encryptSmtpPassword(password, this.smtpSecret());
+      cfg.smtpPasswordEnc = encryptSmtpPassword(password, this.smtpSecret());
     }
 
-    // App is Gmail-only: fill Google SMTP defaults when user/password present
-    if (info.smtpUser?.trim() && info.smtpPasswordEnc) {
-      if (!info.smtpHost?.trim() || /gmail\.com$/i.test(info.smtpHost)) {
-        info.smtpHost = 'smtp.gmail.com';
-        info.smtpPort = 587;
-        info.smtpSecure = false;
+    if (cfg.smtpUser?.trim() && cfg.smtpPasswordEnc) {
+      if (!cfg.smtpHost?.trim() || /gmail\.com$/i.test(cfg.smtpHost)) {
+        cfg.smtpHost = 'smtp.gmail.com';
+        cfg.smtpPort = 587;
+        cfg.smtpSecure = false;
       }
-      if (!info.smtpFromEmail?.trim()) {
-        info.smtpFromEmail = info.smtpUser.trim().toLowerCase();
+      if (!cfg.smtpFromEmail?.trim()) {
+        cfg.smtpFromEmail = cfg.smtpUser.trim().toLowerCase();
       }
     }
+  }
+
+  private defaultConfig(userId: string, dto?: Partial<ConfigPatch>): UserConfig {
+    return this.userConfigRepo.create({
+      userId,
+      sgstPercent: String(dto?.sgstPercent ?? 9),
+      cgstPercent: String(dto?.cgstPercent ?? 9),
+      igstPercent: String(dto?.igstPercent ?? 0),
+      bookingTabConfig:
+        dto?.bookingTabConfig !== undefined
+          ? normalizeBookingTabConfigDto(dto.bookingTabConfig)
+          : null,
+      termsAndConditions:
+        dto?.termsAndConditions !== undefined
+          ? normalizeTermsList(dto.termsAndConditions)
+          : null,
+      insurancePercent: String(dto?.insurancePercent ?? 2),
+      paymentDays: dto?.paymentDays ?? 10,
+      volumetricDivisor: dto?.volumetricDivisor ?? 5000,
+      ewayBillThreshold: String(dto?.ewayBillThreshold ?? 50000),
+      cargoPrintTemplate: dto?.cargoPrintTemplate ?? 'CLASSIC_GRID',
+    });
+  }
+
+  private applyConfigPatch(cfg: UserConfig, dto: ConfigPatch) {
+    if (dto.sgstPercent !== undefined) {
+      cfg.sgstPercent = String(dto.sgstPercent);
+    }
+    if (dto.cgstPercent !== undefined) {
+      cfg.cgstPercent = String(dto.cgstPercent);
+    }
+    if (dto.igstPercent !== undefined) {
+      cfg.igstPercent = String(dto.igstPercent);
+    }
+    if (dto.bookingTabConfig !== undefined) {
+      cfg.bookingTabConfig = normalizeBookingTabConfigDto(dto.bookingTabConfig);
+    }
+    if (dto.termsAndConditions !== undefined) {
+      cfg.termsAndConditions = normalizeTermsList(dto.termsAndConditions);
+    }
+    if (dto.insurancePercent !== undefined) {
+      cfg.insurancePercent = String(dto.insurancePercent);
+    }
+    if (dto.paymentDays !== undefined) cfg.paymentDays = dto.paymentDays;
+    if (dto.volumetricDivisor !== undefined) {
+      cfg.volumetricDivisor = dto.volumetricDivisor;
+    }
+    if (dto.ewayBillThreshold !== undefined) {
+      cfg.ewayBillThreshold = String(dto.ewayBillThreshold);
+    }
+    if (dto.cargoPrintTemplate !== undefined) {
+      cfg.cargoPrintTemplate = dto.cargoPrintTemplate;
+    }
+    if (
+      dto.smtpHost !== undefined ||
+      dto.smtpPort !== undefined ||
+      dto.smtpSecure !== undefined ||
+      dto.smtpUser !== undefined ||
+      dto.smtpPassword !== undefined ||
+      dto.smtpFromEmail !== undefined
+    ) {
+      this.applySmtpSettings(cfg, dto);
+    }
+  }
+
+  async ensureConfig(userId: string): Promise<UserConfig> {
+    let cfg = await this.userConfigRepo.findOne({ where: { userId } });
+    if (!cfg) {
+      cfg = await this.userConfigRepo.save(this.defaultConfig(userId));
+    }
+    return cfg;
+  }
+
+  async getConfig(userId: string) {
+    const cfg = await this.ensureConfig(userId);
+    return sanitizeUserConfig(cfg);
+  }
+
+  async updateConfig(userId: string, dto: ConfigPatch) {
+    const cfg = await this.ensureConfig(userId);
+    this.applyConfigPatch(cfg, dto);
+    await this.userConfigRepo.save(cfg);
+    return this.getConfig(userId);
   }
 
   async create(dto: CreateUserDto) {
@@ -139,7 +246,7 @@ export class UsersService {
         userId: user.id,
         fullName: dto.fullName,
         phone: dto.phone ?? null,
-        email, // same as login email
+        email,
         address: dto.address ?? null,
         city: dto.city ?? null,
         state: dto.state ?? null,
@@ -151,24 +258,26 @@ export class UsersService {
         bankAccountNo: dto.bankAccountNo ?? null,
         bankIfsc: dto.bankIfsc ?? null,
         upiId: dto.upiId ?? null,
-        sgstPercent: String(dto.sgstPercent ?? 9),
-        cgstPercent: String(dto.cgstPercent ?? 9),
-        igstPercent: String(dto.igstPercent ?? 0),
         notes: dto.notes ?? null,
-        termsAndConditions:
-          dto.termsAndConditions !== undefined
-            ? normalizeTermsList(dto.termsAndConditions)
-            : null,
-        insurancePercent: String(dto.insurancePercent ?? 2),
-        paymentDays: dto.paymentDays ?? 10,
-        volumetricDivisor: dto.volumetricDivisor ?? 5000,
-        ewayBillThreshold: String(dto.ewayBillThreshold ?? 50000),
         isActive: dto.isActive ?? true,
         expiredOn: dto.expiredOn?.trim() ? dto.expiredOn.trim() : null,
       }),
     );
 
-    return this.sanitize({ ...user, userInfo });
+    const userConfig = await this.userConfigRepo.save(
+      this.defaultConfig(user.id, {
+        sgstPercent: dto.sgstPercent,
+        cgstPercent: dto.cgstPercent,
+        igstPercent: dto.igstPercent,
+        termsAndConditions: dto.termsAndConditions,
+        insurancePercent: dto.insurancePercent,
+        paymentDays: dto.paymentDays,
+        volumetricDivisor: dto.volumetricDivisor,
+        ewayBillThreshold: dto.ewayBillThreshold,
+      }),
+    );
+
+    return this.sanitize({ ...user, userInfo, userConfig });
   }
 
   async findAll(query: PaginationDto) {
@@ -179,6 +288,7 @@ export class UsersService {
     const qb = this.usersRepo
       .createQueryBuilder('user')
       .leftJoinAndSelect('user.userInfo', 'userInfo')
+      .leftJoinAndSelect('user.userConfig', 'userConfig')
       .where('user.deletedAt IS NULL')
       .skip((query.page - 1) * query.pageSize)
       .take(query.pageSize);
@@ -203,6 +313,7 @@ export class UsersService {
       where: { id },
       relations: {
         userInfo: true,
+        userConfig: true,
       },
     });
     if (!user) {
@@ -216,6 +327,7 @@ export class UsersService {
       where: { id },
       relations: {
         userInfo: true,
+        userConfig: true,
       },
     });
     if (!user) {
@@ -236,7 +348,6 @@ export class UsersService {
     if (dto.role !== undefined) user.role = dto.role;
     if (dto.isActive !== undefined) user.isActive = dto.isActive;
 
-    // Blank password = keep existing hash
     if (dto.password !== undefined && dto.password.trim() !== '') {
       user.passwordHash = await bcrypt.hash(dto.password.trim(), 10);
     }
@@ -254,7 +365,6 @@ export class UsersService {
 
     if (dto.fullName !== undefined) info.fullName = dto.fullName;
     if (dto.phone !== undefined) info.phone = dto.phone;
-    // Keep user_info.email in sync with login email (single email)
     info.email = user.email;
     if (dto.address !== undefined) info.address = dto.address;
     if (dto.city !== undefined) info.city = dto.city;
@@ -267,35 +377,7 @@ export class UsersService {
     if (dto.bankAccountNo !== undefined) info.bankAccountNo = dto.bankAccountNo;
     if (dto.bankIfsc !== undefined) info.bankIfsc = dto.bankIfsc;
     if (dto.upiId !== undefined) info.upiId = dto.upiId;
-    if (dto.sgstPercent !== undefined) {
-      info.sgstPercent = String(dto.sgstPercent);
-    }
-    if (dto.cgstPercent !== undefined) {
-      info.cgstPercent = String(dto.cgstPercent);
-    }
-    if (dto.igstPercent !== undefined) {
-      info.igstPercent = String(dto.igstPercent);
-    }
     if (dto.notes !== undefined) info.notes = dto.notes;
-    if (dto.bookingTabConfig !== undefined) {
-      // Persist per-user Tab focus field lists (account / cash)
-      info.bookingTabConfig = normalizeBookingTabConfigDto(
-        dto.bookingTabConfig,
-      );
-    }
-    if (dto.termsAndConditions !== undefined) {
-      info.termsAndConditions = normalizeTermsList(dto.termsAndConditions);
-    }
-    if (dto.insurancePercent !== undefined) {
-      info.insurancePercent = String(dto.insurancePercent);
-    }
-    if (dto.paymentDays !== undefined) info.paymentDays = dto.paymentDays;
-    if (dto.volumetricDivisor !== undefined) {
-      info.volumetricDivisor = dto.volumetricDivisor;
-    }
-    if (dto.ewayBillThreshold !== undefined) {
-      info.ewayBillThreshold = String(dto.ewayBillThreshold);
-    }
     if (dto.infoIsActive !== undefined) info.isActive = dto.infoIsActive;
     if (dto.expiredOn !== undefined) {
       const raw = dto.expiredOn;
@@ -305,18 +387,35 @@ export class UsersService {
           : String(raw).trim().slice(0, 10);
     }
 
-    if (
+    await this.userInfoRepo.save(info);
+
+    const hasConfigPatch =
+      dto.sgstPercent !== undefined ||
+      dto.cgstPercent !== undefined ||
+      dto.igstPercent !== undefined ||
+      dto.bookingTabConfig !== undefined ||
+      dto.termsAndConditions !== undefined ||
+      dto.insurancePercent !== undefined ||
+      dto.paymentDays !== undefined ||
+      dto.volumetricDivisor !== undefined ||
+      dto.ewayBillThreshold !== undefined ||
+      dto.cargoPrintTemplate !== undefined ||
       dto.smtpHost !== undefined ||
       dto.smtpPort !== undefined ||
       dto.smtpSecure !== undefined ||
       dto.smtpUser !== undefined ||
       dto.smtpPassword !== undefined ||
-      dto.smtpFromEmail !== undefined
-    ) {
-      this.applySmtpSettings(info, dto);
+      dto.smtpFromEmail !== undefined;
+
+    if (hasConfigPatch) {
+      let cfg = user.userConfig;
+      if (!cfg) {
+        cfg = this.defaultConfig(user.id);
+      }
+      this.applyConfigPatch(cfg, dto);
+      await this.userConfigRepo.save(cfg);
     }
 
-    await this.userInfoRepo.save(info);
     return this.findOne(id);
   }
 }

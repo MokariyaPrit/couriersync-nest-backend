@@ -282,16 +282,16 @@ export class BillingService {
   ): Promise<GstRates> {
     const issuer = await this.usersRepo.findOne({
       where: { id: user.id },
-      relations: { userInfo: true },
+      relations: { userConfig: true },
     });
-    const info = issuer?.userInfo;
+    const cfg = issuer?.userConfig;
     return {
       sgstPercent:
-        overrides?.sgstPercent ?? Number(info?.sgstPercent ?? 9),
+        overrides?.sgstPercent ?? Number(cfg?.sgstPercent ?? 9),
       cgstPercent:
-        overrides?.cgstPercent ?? Number(info?.cgstPercent ?? 9),
+        overrides?.cgstPercent ?? Number(cfg?.cgstPercent ?? 9),
       igstPercent:
-        overrides?.igstPercent ?? Number(info?.igstPercent ?? 0),
+        overrides?.igstPercent ?? Number(cfg?.igstPercent ?? 0),
     };
   }
 

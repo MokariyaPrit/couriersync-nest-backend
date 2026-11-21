@@ -19,6 +19,7 @@ import type { StoredFileDto } from '../storage/stored-file';
 import { UsersService } from '../users/users.service';
 import { LoginDto } from './dto/login.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { UpdateUserConfigDto } from './dto/update-user-config.dto';
 import { UploadLogoDto } from './dto/upload-logo.dto';
 import { JwtPayload } from './jwt.strategy';
 
@@ -100,7 +101,6 @@ export class AuthService {
     const userInfo = sanitizeUserInfo(user.userInfo);
     const { logoUrl, logo } = await this.resolveLogo(user.userInfo);
     if (userInfo) {
-      // API still exposes logoUrl as the signed URL for clients.
       userInfo.logoUrl = logoUrl;
     }
     return {
@@ -182,6 +182,14 @@ export class AuthService {
     return await this.sanitize(user);
   }
 
+  async getConfig(userId: string) {
+    return this.usersService.getConfig(userId);
+  }
+
+  async updateConfig(userId: string, dto: UpdateUserConfigDto) {
+    return this.usersService.updateConfig(userId, dto);
+  }
+
   async updateProfile(userId: string, dto: UpdateProfileDto) {
     await this.usersService.update(userId, {
       fullName: dto.fullName,
@@ -198,22 +206,7 @@ export class AuthService {
       bankAccountNo: dto.bankAccountNo,
       bankIfsc: dto.bankIfsc,
       upiId: dto.upiId,
-      sgstPercent: dto.sgstPercent,
-      cgstPercent: dto.cgstPercent,
-      igstPercent: dto.igstPercent,
       notes: dto.notes,
-      bookingTabConfig: dto.bookingTabConfig,
-      termsAndConditions: dto.termsAndConditions,
-      insurancePercent: dto.insurancePercent,
-      paymentDays: dto.paymentDays,
-      volumetricDivisor: dto.volumetricDivisor,
-      ewayBillThreshold: dto.ewayBillThreshold,
-      smtpHost: dto.smtpHost,
-      smtpPort: dto.smtpPort,
-      smtpSecure: dto.smtpSecure,
-      smtpUser: dto.smtpUser,
-      smtpPassword: dto.smtpPassword,
-      smtpFromEmail: dto.smtpFromEmail,
     });
     return this.me(userId);
   }
@@ -253,7 +246,7 @@ export class AuthService {
       {
         maxBytes: logoMaxBytes,
         allowedMimePrefix: ['image/'],
-        meta, // reuse HEAD — avoid a second Class B request
+        meta,
       },
     );
 

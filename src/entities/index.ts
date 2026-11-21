@@ -1,5 +1,6 @@
 export { User } from './user.entity';
 export { UserInfo } from './user-info.entity';
+export { UserConfig } from './user-config.entity';
 export { Customer } from './customer.entity';
 export { State } from './state.entity';
 export { City } from './city.entity';

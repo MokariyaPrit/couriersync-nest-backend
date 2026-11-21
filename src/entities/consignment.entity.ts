@@ -1,4 +1,4 @@
-import { BookingType } from '@/shared';
+import { BookingType, ShipmentKind } from '@/shared';
 import {
   Column,
   CreateDateColumn,
@@ -30,6 +30,13 @@ export class Consignment {
     default: BookingType.CASH,
   })
   bookingType: BookingType;
+
+  @Column({
+    type: 'enum',
+    enum: ShipmentKind,
+    default: ShipmentKind.REGULAR,
+  })
+  shipmentKind: ShipmentKind;
 
   /** Quotation / cash matrix section id (DOX, PARCEL, …) */
   @Column({ type: 'varchar', nullable: true })
@@ -155,6 +162,59 @@ export class Consignment {
 
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
   igst: string;
+
+  /** Cargo: number of boxes / packages */
+  @Column({ type: 'int', nullable: true })
+  numberOfBoxes: number | null;
+
+  /** Cargo: gross amount before extras */
+  @Column({ type: 'decimal', precision: 12, scale: 2, nullable: true })
+  grossAmt: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  otherChargeLabel: string | null;
+
+  @Column({ type: 'decimal', precision: 12, scale: 2, nullable: true })
+  otherChargeAmt: string | null;
+
+  @Column({ type: 'decimal', precision: 8, scale: 3, nullable: true })
+  fuelChargePercent: string | null;
+
+  @Column({ type: 'decimal', precision: 12, scale: 2, nullable: true })
+  fuelChargeAmt: string | null;
+
+  @Column({ type: 'boolean', default: false })
+  insuranceEnabled: boolean;
+
+  @Column({ type: 'decimal', precision: 8, scale: 3, nullable: true })
+  insurancePercent: string | null;
+
+  @Column({ type: 'decimal', precision: 12, scale: 2, nullable: true })
+  insuranceAmt: string | null;
+
+  @Column({ type: 'boolean', default: false })
+  ewayBillEnabled: boolean;
+
+  @Column({ type: 'decimal', precision: 8, scale: 3, nullable: true })
+  ewayBillPercent: string | null;
+
+  @Column({ type: 'decimal', precision: 12, scale: 2, nullable: true })
+  ewayBillAmt: string | null;
+
+  @Column({ type: 'decimal', precision: 12, scale: 2, nullable: true })
+  parcelValue: string | null;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  heightCm: string | null;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  lengthCm: string | null;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  widthCm: string | null;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  volumetricDivisor: string | null;
 
   @Column({ type: 'bigint' })
   createdById: string;

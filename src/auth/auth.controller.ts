@@ -17,6 +17,7 @@ import { MailService } from '../mail/mail.service';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { UpdateUserConfigDto } from './dto/update-user-config.dto';
 import { UploadLogoDto } from './dto/upload-logo.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
@@ -55,6 +56,21 @@ export class AuthController {
   @Get('me')
   me(@CurrentUser() user: AuthUser) {
     return this.authService.me(user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('config')
+  getConfig(@CurrentUser() user: AuthUser) {
+    return this.authService.getConfig(user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('config')
+  updateConfig(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: UpdateUserConfigDto,
+  ) {
+    return this.authService.updateConfig(user.id, dto);
   }
 
   @UseGuards(JwtAuthGuard)

@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { BookingType, InvoiceStatus, Role } from '@/shared';
+import { BookingType, InvoiceStatus, Role, ShipmentKind } from '@/shared';
 import { Repository } from 'typeorm';
 import { AuthUser } from '../common/decorators/current-user.decorator';
 import { paginateMeta, resolveSortPair } from '../common/dto/pagination.dto';
@@ -58,8 +58,14 @@ export class ConsignmentsService {
     );
   }
 
+  private moneyOrNull(value: number | undefined | null) {
+    if (value === undefined || value === null) return null;
+    return String(value);
+  }
+
   async create(dto: CreateConsignmentDto, user: AuthUser) {
     const bookingType = dto.bookingType ?? BookingType.CASH;
+    const shipmentKind = dto.shipmentKind ?? ShipmentKind.REGULAR;
 
     if (bookingType === BookingType.ACCOUNT && !dto.customerId) {
       throw new BadRequestException('Customer is required for account booking');
@@ -73,9 +79,12 @@ export class ConsignmentsService {
       throw new BadRequestException('Document number is required');
     }
 
+    const isCargo = shipmentKind === ShipmentKind.CARGO;
+
     const consignment = this.consignmentsRepo.create({
       awb,
       bookingType,
+      shipmentKind,
       customerId:
         bookingType === BookingType.ACCOUNT ? (dto.customerId ?? null) : null,
       courierCompanyId: dto.courierCompanyId ?? null,
@@ -122,6 +131,39 @@ export class ConsignmentsService {
       cgst: String(dto.cgst ?? 0),
       sgst: String(dto.sgst ?? 0),
       igst: String(dto.igst ?? 0),
+      numberOfBoxes: isCargo ? (dto.numberOfBoxes ?? null) : null,
+      grossAmt: isCargo ? this.moneyOrNull(dto.grossAmt ?? null) : null,
+      otherChargeLabel: isCargo
+        ? dto.otherChargeLabel?.trim() || null
+        : null,
+      otherChargeAmt: isCargo
+        ? this.moneyOrNull(dto.otherChargeAmt ?? null)
+        : null,
+      fuelChargePercent: isCargo
+        ? this.moneyOrNull(dto.fuelChargePercent ?? null)
+        : null,
+      fuelChargeAmt: isCargo
+        ? this.moneyOrNull(dto.fuelChargeAmt ?? null)
+        : null,
+      insuranceEnabled: isCargo ? Boolean(dto.insuranceEnabled) : false,
+      insurancePercent: isCargo
+        ? this.moneyOrNull(dto.insurancePercent ?? null)
+        : null,
+      insuranceAmt: isCargo
+        ? this.moneyOrNull(dto.insuranceAmt ?? null)
+        : null,
+      ewayBillEnabled: isCargo ? Boolean(dto.ewayBillEnabled) : false,
+      ewayBillPercent: isCargo
+        ? this.moneyOrNull(dto.ewayBillPercent ?? null)
+        : null,
+      ewayBillAmt: isCargo ? this.moneyOrNull(dto.ewayBillAmt ?? null) : null,
+      parcelValue: isCargo ? this.moneyOrNull(dto.parcelValue ?? null) : null,
+      heightCm: isCargo ? this.moneyOrNull(dto.heightCm ?? null) : null,
+      lengthCm: isCargo ? this.moneyOrNull(dto.lengthCm ?? null) : null,
+      widthCm: isCargo ? this.moneyOrNull(dto.widthCm ?? null) : null,
+      volumetricDivisor: isCargo
+        ? this.moneyOrNull(dto.volumetricDivisor ?? null)
+        : null,
       createdById: user.id,
       remarks: dto.remarks ?? null,
     });
@@ -151,6 +193,11 @@ export class ConsignmentsService {
     if (query.bookingType) {
       qb.andWhere('c.bookingType = :bookingType', {
         bookingType: query.bookingType,
+      });
+    }
+    if (query.shipmentKind) {
+      qb.andWhere('c.shipmentKind = :shipmentKind', {
+        shipmentKind: query.shipmentKind,
       });
     }
     if (query.receiverId) {
@@ -249,6 +296,7 @@ export class ConsignmentsService {
         id: consignment.id,
         awb: consignment.awb,
         bookingType: consignment.bookingType,
+        shipmentKind: consignment.shipmentKind,
         bookingDate: consignment.bookingDate,
         createdAt: consignment.createdAt,
         senderName: consignment.senderName,
@@ -270,6 +318,20 @@ export class ConsignmentsService {
         partyName: consignment.partyName,
         customerName: consignment.customer?.name ?? null,
         courierCompanyName: consignment.courierCompany?.name ?? null,
+        remarks: consignment.remarks,
+        numberOfBoxes: consignment.numberOfBoxes,
+        grossAmt: consignment.grossAmt,
+        otherChargeLabel: consignment.otherChargeLabel,
+        otherChargeAmt: consignment.otherChargeAmt,
+        fuelChargePercent: consignment.fuelChargePercent,
+        fuelChargeAmt: consignment.fuelChargeAmt,
+        insuranceEnabled: consignment.insuranceEnabled,
+        insurancePercent: consignment.insurancePercent,
+        insuranceAmt: consignment.insuranceAmt,
+        ewayBillEnabled: consignment.ewayBillEnabled,
+        ewayBillPercent: consignment.ewayBillPercent,
+        ewayBillAmt: consignment.ewayBillAmt,
+        parcelValue: consignment.parcelValue,
       },
       letterhead: {
         companyName,
@@ -383,6 +445,9 @@ export class ConsignmentsService {
     if (dto.receiverStateId !== undefined) {
       consignment.receiverStateId = dto.receiverStateId;
     }
+    if (dto.shipmentKind !== undefined) {
+      consignment.shipmentKind = dto.shipmentKind;
+    }
     if (dto.weightKg !== undefined) {
       consignment.weightKg = String(dto.weightKg);
     }
@@ -402,6 +467,59 @@ export class ConsignmentsService {
     if (dto.cgst !== undefined) consignment.cgst = String(dto.cgst);
     if (dto.sgst !== undefined) consignment.sgst = String(dto.sgst);
     if (dto.igst !== undefined) consignment.igst = String(dto.igst);
+
+    if (dto.numberOfBoxes !== undefined) {
+      consignment.numberOfBoxes = dto.numberOfBoxes;
+    }
+    if (dto.grossAmt !== undefined) {
+      consignment.grossAmt = this.moneyOrNull(dto.grossAmt);
+    }
+    if (dto.otherChargeLabel !== undefined) {
+      consignment.otherChargeLabel = dto.otherChargeLabel?.trim() || null;
+    }
+    if (dto.otherChargeAmt !== undefined) {
+      consignment.otherChargeAmt = this.moneyOrNull(dto.otherChargeAmt);
+    }
+    if (dto.fuelChargePercent !== undefined) {
+      consignment.fuelChargePercent = this.moneyOrNull(dto.fuelChargePercent);
+    }
+    if (dto.fuelChargeAmt !== undefined) {
+      consignment.fuelChargeAmt = this.moneyOrNull(dto.fuelChargeAmt);
+    }
+    if (dto.insuranceEnabled !== undefined) {
+      consignment.insuranceEnabled = Boolean(dto.insuranceEnabled);
+    }
+    if (dto.insurancePercent !== undefined) {
+      consignment.insurancePercent = this.moneyOrNull(dto.insurancePercent);
+    }
+    if (dto.insuranceAmt !== undefined) {
+      consignment.insuranceAmt = this.moneyOrNull(dto.insuranceAmt);
+    }
+    if (dto.ewayBillEnabled !== undefined) {
+      consignment.ewayBillEnabled = Boolean(dto.ewayBillEnabled);
+    }
+    if (dto.ewayBillPercent !== undefined) {
+      consignment.ewayBillPercent = this.moneyOrNull(dto.ewayBillPercent);
+    }
+    if (dto.ewayBillAmt !== undefined) {
+      consignment.ewayBillAmt = this.moneyOrNull(dto.ewayBillAmt);
+    }
+    if (dto.parcelValue !== undefined) {
+      consignment.parcelValue = this.moneyOrNull(dto.parcelValue);
+    }
+    if (dto.heightCm !== undefined) {
+      consignment.heightCm = this.moneyOrNull(dto.heightCm);
+    }
+    if (dto.lengthCm !== undefined) {
+      consignment.lengthCm = this.moneyOrNull(dto.lengthCm);
+    }
+    if (dto.widthCm !== undefined) {
+      consignment.widthCm = this.moneyOrNull(dto.widthCm);
+    }
+    if (dto.volumetricDivisor !== undefined) {
+      consignment.volumetricDivisor = this.moneyOrNull(dto.volumetricDivisor);
+    }
+
     if (dto.remarks !== undefined) {
       consignment.remarks = dto.remarks?.trim() || null;
     }

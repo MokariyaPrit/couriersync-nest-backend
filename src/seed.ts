@@ -9,6 +9,7 @@ import { ALL_ENTITIES } from './database/entities';
 import { City } from './entities/city.entity';
 import { State } from './entities/state.entity';
 import { User } from './entities/user.entity';
+import { UserConfig } from './entities/user-config.entity';
 import { UserInfo } from './entities/user-info.entity';
 
 type SampleRow = { city: string; state: string };
@@ -164,6 +165,7 @@ async function run() {
 
   const users = ds.getRepository(User);
   const userInfo = ds.getRepository(UserInfo);
+  const userConfig = ds.getRepository(UserConfig);
 
   const adminEmail = (
     process.env.SEED_ADMIN_EMAIL || 'admin@courier.local'
@@ -205,6 +207,7 @@ async function run() {
         isActive: true,
       }),
     );
+    await userConfig.save(userConfig.create({ userId: admin.id }));
   }
 
   let bm = await users.findOne({
@@ -240,6 +243,7 @@ async function run() {
         isActive: true,
       }),
     );
+    await userConfig.save(userConfig.create({ userId: bm.id }));
   }
 
   await seedLocations(ds);

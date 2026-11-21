@@ -22,6 +22,7 @@ import { Quotation, QuotationSnapshot } from '../entities/quotation.entity';
 import { QuotationRateRow } from '../entities/quotation-rate-row.entity';
 import { QuotationRateTemplate } from '../entities/quotation-rate-template.entity';
 import { User } from '../entities/user.entity';
+import { UserConfig } from '../entities/user-config.entity';
 import { UserInfo } from '../entities/user-info.entity';
 import { DocumentMailPdfService } from '../mail/document-mail-pdf.service';
 import { SendDocumentEmailDto } from '../mail/dto/send-document-email.dto';
@@ -506,13 +507,14 @@ export class QuotationsService {
     const quotation = await this.findOne(id, user);
     const issuer = await this.usersRepo.findOne({
       where: { id: quotation.createdById },
-      relations: { userInfo: true },
+      relations: { userInfo: true, userConfig: true },
     });
     if (issuer) {
       delete (issuer as { passwordHash?: string }).passwordHash;
     }
 
     const info = issuer?.userInfo;
+    const cfg = issuer?.userConfig;
     const snapshot = quotation.snapshot;
     const columns = [...(snapshot?.columns ?? [])].sort(
       (a, b) => a.sortOrder - b.sortOrder,
@@ -568,7 +570,7 @@ export class QuotationsService {
         phone: snapshot?.customerPhone ?? quotation.customer?.primaryPhone,
         email: snapshot?.customerEmail ?? quotation.customer?.primaryEmail,
       },
-      terms: this.buildTermsDocument(info, snapshot, quotation.customer),
+      terms: this.buildTermsDocument(info, cfg, snapshot, quotation.customer),
       columns,
       sections,
     };
@@ -576,12 +578,13 @@ export class QuotationsService {
 
   private buildTermsDocument(
     info: UserInfo | null | undefined,
+    cfg: UserConfig | null | undefined,
     snapshot: QuotationSnapshot | null | undefined,
     customer: Customer | null | undefined,
   ) {
-    const sgst = Number(info?.sgstPercent ?? 9);
-    const cgst = Number(info?.cgstPercent ?? 9);
-    const igst = Number(info?.igstPercent ?? 0);
+    const sgst = Number(cfg?.sgstPercent ?? 9);
+    const cgst = Number(cfg?.cgstPercent ?? 9);
+    const igst = Number(cfg?.igstPercent ?? 0);
     const gstPercent =
       igst > 0 ? String(igst) : String(Number((sgst + cgst).toFixed(2)));
     const fovPercent = String(
@@ -592,17 +595,17 @@ export class QuotationsService {
         customer?.fuelChargesExtraPercent ??
         '0',
     );
-    const insurancePercent = String(info?.insurancePercent ?? '2');
-    const paymentDays = String(info?.paymentDays ?? 10);
-    const volumetricDivisor = String(info?.volumetricDivisor ?? 5000);
-    const ewayRaw = Number(info?.ewayBillThreshold ?? 50000);
+    const insurancePercent = String(cfg?.insurancePercent ?? '2');
+    const paymentDays = String(cfg?.paymentDays ?? 10);
+    const volumetricDivisor = String(cfg?.volumetricDivisor ?? 5000);
+    const ewayRaw = Number(cfg?.ewayBillThreshold ?? 50000);
     const ewayBillThreshold = Number.isFinite(ewayRaw)
       ? ewayRaw.toLocaleString('en-IN')
       : '50,000';
     const companyName =
       info?.companyName?.trim() || info?.fullName?.trim() || 'Courier';
 
-    const lines = resolveTermsLines(info?.termsAndConditions, {
+    const lines = resolveTermsLines(cfg?.termsAndConditions, {
       companyName,
       fovPercent,
       fuelChargesExtraPercent,

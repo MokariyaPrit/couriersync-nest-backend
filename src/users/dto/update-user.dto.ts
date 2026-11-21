@@ -1,4 +1,4 @@
-import { Role } from '@/shared';
+import { CargoPrintTemplate, Role } from '@/shared';
 import { Type } from 'class-transformer';
 import {
   IsArray,
@@ -146,6 +146,10 @@ export class UpdateUserDto {
   @IsNumber()
   @Min(0)
   ewayBillThreshold?: number;
+
+  @IsOptional()
+  @IsEnum(CargoPrintTemplate)
+  cargoPrintTemplate?: CargoPrintTemplate;
 
   @IsOptional()
   @IsBoolean()
