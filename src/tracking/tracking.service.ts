@@ -9,6 +9,7 @@ import { Repository } from 'typeorm';
 import { AuthUser } from '../common/decorators/current-user.decorator';
 import { Consignment } from '../entities/consignment.entity';
 import { AnjaniTrackingProvider } from './providers/anjani.provider';
+import { MahavirTrackingProvider } from './providers/mahavir.provider';
 import { TirupatiTrackingProvider } from './providers/tirupati.provider';
 import type {
   TrackingProviderAdapter,
@@ -24,10 +25,12 @@ export class TrackingService {
     private readonly consignmentsRepo: Repository<Consignment>,
     tirupati: TirupatiTrackingProvider,
     anjani: AnjaniTrackingProvider,
+    mahavir: MahavirTrackingProvider,
   ) {
     this.adapters = new Map<string, TrackingProviderAdapter>([
       [TrackingProvider.TIRUPATI, tirupati],
       [TrackingProvider.ANJANI, anjani],
+      [TrackingProvider.MAHAVIR, mahavir],
     ]);
   }
 
