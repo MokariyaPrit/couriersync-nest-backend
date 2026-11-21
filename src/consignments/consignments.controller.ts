@@ -15,6 +15,7 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 import type { AuthUser } from '../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
+import { TrackingService } from '../tracking/tracking.service';
 import { ConsignmentsService } from './consignments.service';
 import {
   ConsignmentQueryDto,
@@ -26,7 +27,10 @@ import {
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.ADMIN, Role.BRANCH_MANAGER)
 export class ConsignmentsController {
-  constructor(private readonly consignmentsService: ConsignmentsService) {}
+  constructor(
+    private readonly consignmentsService: ConsignmentsService,
+    private readonly trackingService: TrackingService,
+  ) {}
 
   @Get('dashboard/counts')
   dashboard() {
@@ -57,6 +61,11 @@ export class ConsignmentsController {
     @CurrentUser() user: AuthUser,
   ) {
     return this.consignmentsService.findDocument(id, user);
+  }
+
+  @Get(':id/track')
+  track(@Param('id') id: string, @CurrentUser() user: AuthUser) {
+    return this.trackingService.trackConsignment(id, user);
   }
 
   @Get(':id')

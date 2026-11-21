@@ -1,9 +1,12 @@
+import { TrackingProvider } from '@/shared';
 import { Transform } from 'class-transformer';
 import {
   IsBoolean,
+  IsEnum,
   IsOptional,
   IsString,
   MinLength,
+  ValidateIf,
 } from 'class-validator';
 import { PaginationDto } from '../../common/dto/pagination.dto';
 
@@ -15,6 +18,11 @@ export class CreateCourierCompanyDto {
   @IsOptional()
   @IsString()
   companyLink?: string;
+
+  @IsOptional()
+  @ValidateIf((_, v) => v !== null && v !== '')
+  @IsEnum(TrackingProvider)
+  trackingProvider?: TrackingProvider | null;
 
   @IsOptional()
   @IsBoolean()
@@ -30,6 +38,11 @@ export class UpdateCourierCompanyDto {
   @IsOptional()
   @IsString()
   companyLink?: string | null;
+
+  @IsOptional()
+  @ValidateIf((_, v) => v !== null && v !== '')
+  @IsEnum(TrackingProvider)
+  trackingProvider?: TrackingProvider | null;
 
   @IsOptional()
   @IsBoolean()

@@ -124,6 +124,10 @@ export class CourierCompaniesService {
       this.repo.create({
         name,
         companyLink: this.blankToNull(dto.companyLink),
+        trackingProvider:
+          user.role === Role.ADMIN
+            ? this.blankToNull(dto.trackingProvider ?? null)
+            : null,
         isActive: dto.isActive ?? true,
         isShared,
         createdById: user.id,
@@ -218,6 +222,9 @@ export class CourierCompaniesService {
     }
     if (dto.companyLink !== undefined) {
       row.companyLink = this.blankToNull(dto.companyLink);
+    }
+    if (dto.trackingProvider !== undefined && user.role === Role.ADMIN) {
+      row.trackingProvider = this.blankToNull(dto.trackingProvider);
     }
     if (dto.isActive !== undefined) row.isActive = dto.isActive;
 

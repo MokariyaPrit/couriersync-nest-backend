@@ -22,6 +22,13 @@ export class CourierCompany {
   @Column({ type: 'varchar', nullable: true, length: 500 })
   companyLink: string | null;
 
+  /**
+   * In-app live tracking adapter (null = no Track action).
+   * Values: TrackingProvider enum e.g. TIRUPATI
+   */
+  @Column({ type: 'varchar', length: 32, nullable: true })
+  trackingProvider: string | null;
+
   @Column({ type: 'boolean', default: true })
   isActive: boolean;
 
